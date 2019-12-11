@@ -153,6 +153,8 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder = new ViewHolder();
                 viewHolder.leftLayout = (LinearLayout)view.findViewById(R.id.left_layout);
                 viewHolder.rightLayout = (LinearLayout)view.findViewById(R.id.right_layout);
+                viewHolder.blankLayout = (LinearLayout)view.findViewById(R.id.blank_layout);
+                viewHolder.blankMsg = (TextView)view.findViewById(R.id.blank_msg);
                 viewHolder.leftMsg = (TextView)view.findViewById(R.id.left_msg);
                 viewHolder.rightMsg = (TextView)view.findViewById(R.id.right_msg);
                 view.setTag(viewHolder);
@@ -172,11 +174,14 @@ public class MainActivity extends AppCompatActivity {
                 viewHolder.leftLayout.setVisibility(View.GONE);
                 viewHolder.rightMsg.setText(msg.content);
             }
+            viewHolder.blankLayout.setVisibility(View.GONE);
             return view;
         }
         public class ViewHolder{
             LinearLayout leftLayout;
             LinearLayout rightLayout;
+            LinearLayout blankLayout;
+            TextView blankMsg;
             TextView leftMsg;
             TextView rightMsg;
         }

@@ -3,7 +3,9 @@ package com.example.letuschat;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ContentValues;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -14,6 +16,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 public class Main2Activity extends AppCompatActivity {
+    private DatabaseAdapter databaseadapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,7 +44,11 @@ public class Main2Activity extends AppCompatActivity {
 //                    btn.setText(msg.obj.toString());
                     if(msg.obj.toString().equals("lol"))
                     {
-                        Intent intent = new Intent(Main2Activity.this, MainActivity.class);
+                        EditText text3 = findViewById(R.id.editText3);
+                        String query = text3.getText().toString();
+                        databaseadapter = new DatabaseAdapter(Main2Activity.this, query);
+                        Intent intent = new Intent(Main2Activity.this, FriendList.class);
+                        intent.putExtra("id", query);
                         startActivity(intent);
                     }
                     else
