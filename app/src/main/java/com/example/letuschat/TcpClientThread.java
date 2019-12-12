@@ -41,7 +41,6 @@ public class TcpClientThread extends Thread {
         this.mHandler = handler;
         this.address = address;
         this.port = port;
-//        this.msg = msg;
     }
 
     @Override

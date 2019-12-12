@@ -6,16 +6,21 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class FriendList extends AppCompatActivity {
@@ -24,13 +29,14 @@ public class FriendList extends AppCompatActivity {
     public FriendMsgAdapter adapter;
     public List<Friend_Msg> friend_msgList = new ArrayList<Friend_Msg>();
     public DatabaseAdapter dbadapter;
+    public String address="166.111.140.57";
+    public int port = 8000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_friend_list);
         Intent intent = getIntent();
-        friend_msgList.add(new Friend_Msg("test_list", 1));
         id_number = intent.getStringExtra("id");
         dbadapter = new DatabaseAdapter(FriendList.this, id_number);
         ArrayList<String> friends = dbadapter.db_all_friend("names");
@@ -40,7 +46,59 @@ public class FriendList extends AppCompatActivity {
         adapter = new FriendMsgAdapter(FriendList.this, R.layout.chat_alone, friend_msgList);
         friend_listview = findViewById(R.id.list_view2);
         friend_listview.setAdapter(adapter);
+        friend_listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                if(id == -1) {
+                    return;
+                }
+                int realPosition=(int)id+1;
+                String tem = dbadapter.db_find_id("names", String.valueOf(realPosition));
+                Toast.makeText(FriendList.this, tem, Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(FriendList.this, MainActivity.class);
+                intent.putExtra("id", tem);
+                startActivity(intent);
+            }
+        });
     }
+
+    Handler mhandler = new Handler(){
+        @Override
+        public  void handleMessage(Message msg){
+            super.handleMessage(msg);
+            switch (msg.what){
+                case(0):{
+                    if(!msg.obj.toString().equals("n"))
+                    {
+                        EditText edittext = findViewById(R.id.editText2);
+                        String content = edittext.getText().toString();
+                        ArrayList<String> arr = dbadapter.db_find_name("names", content);
+                        if(!(arr.size()==0))
+                        {
+                            Toast.makeText(FriendList.this, "请勿戏耍本软件", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        // set the name on the screen
+                        FriendList.Friend_Msg frimsg=new FriendList.Friend_Msg(content, 1);
+                        friend_msgList.add(frimsg);
+                        adapter.notifyDataSetChanged();
+                        friend_listview.setSelection(friend_msgList.size());
+                        edittext.setText("");
+                        // set the friend into the database
+                        ContentValues values = new ContentValues();
+                        values.put("kind", "friend");
+                        values.put("name", content);
+                        dbadapter.db_add("names", values);
+                    }
+                    else
+                    {
+                        Toast.makeText(FriendList.this, "您输入的学号可能有误，也可能是网络未正确连接！", Toast.LENGTH_LONG).show();
+                    }
+                    break;
+                }
+            }
+        }
+    };
 
     public void add_friend_msg(View v)
     {
@@ -48,15 +106,11 @@ public class FriendList extends AppCompatActivity {
         String content = edittext.getText().toString();
         if(content.equals(""))
             return;
-        FriendList.Friend_Msg msg=new FriendList.Friend_Msg(content, 1);
-        friend_msgList.add(msg);
-        adapter.notifyDataSetChanged();
-        friend_listview.setSelection(friend_msgList.size());
-        edittext.setText("");
-        ContentValues values = new ContentValues();
-        values.put("kind", "friend");
-        values.put("name", content);
-        dbadapter.db_add("names", values);
+        // check whether the friend is online
+        String query = "q"+content;
+        TcpClientThread client_thread = new TcpClientThread(mhandler, address, port);
+        client_thread.setmsg(query);
+        client_thread.start();
     }
     public class Friend_Msg
     {

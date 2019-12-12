@@ -27,6 +27,28 @@ public class DatabaseAdapter {
         db.delete(tablename, "_id=?", ids);
         db.close();
     }
+    public ArrayList<String> db_find_name(String tablename, String friend_name)
+    {
+        SQLiteDatabase db = dbhelper.getReadableDatabase();
+        Cursor c = db.query(tablename, new String[]{"name"}, "name=?", new String[]{friend_name}, null, null, null, null);
+        ArrayList<String> id_number = new ArrayList<>();
+        while(c.moveToNext())
+        {
+            id_number.add(c.getString(c.getColumnIndexOrThrow("name")));
+        }
+        return id_number;
+    }
+    public String db_find_id(String tablename, String id)
+    {
+        SQLiteDatabase db = dbhelper.getReadableDatabase();
+        Cursor c = db.query(tablename, new String[]{"name"}, "_id=?", new String[]{id}, null, null, null, null);
+        String str="";
+        if(c.moveToNext())
+        {
+            str = c.getString(c.getColumnIndexOrThrow("name"));
+        }
+        return str;
+    }
     public ArrayList<String> db_all_friend(String tablename)
     {
         SQLiteDatabase db = dbhelper.getReadableDatabase();

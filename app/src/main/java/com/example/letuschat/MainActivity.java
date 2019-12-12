@@ -3,6 +3,7 @@ package com.example.letuschat;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -29,10 +30,13 @@ public class MainActivity extends AppCompatActivity {
     public Button sendbtn;
     public MsgAdapter adapter;
     public List<Msg> msgList = new ArrayList<Msg>();
+    public String id_number;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Intent intent = getIntent();
+        id_number = intent.getStringExtra("id");
         setContentView(R.layout.activity_main);
         msgList.add(new Msg("I miss you!", Msg.RECEIVED));
         msgList.add(new Msg("I miss you, too!", Msg.SENT));
