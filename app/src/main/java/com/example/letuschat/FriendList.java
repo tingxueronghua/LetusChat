@@ -2,6 +2,7 @@ package com.example.letuschat;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -22,6 +23,7 @@ public class FriendList extends AppCompatActivity {
     private String id_number;
     public FriendMsgAdapter adapter;
     public List<Friend_Msg> friend_msgList = new ArrayList<Friend_Msg>();
+    public DatabaseAdapter dbadapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +32,11 @@ public class FriendList extends AppCompatActivity {
         Intent intent = getIntent();
         friend_msgList.add(new Friend_Msg("test_list", 1));
         id_number = intent.getStringExtra("id");
+        dbadapter = new DatabaseAdapter(FriendList.this, id_number);
+        ArrayList<String> friends = dbadapter.db_all_friend("names");
+        for(String str:friends){
+            friend_msgList.add(new Friend_Msg(str, 1));
+        }
         adapter = new FriendMsgAdapter(FriendList.this, R.layout.chat_alone, friend_msgList);
         friend_listview = findViewById(R.id.list_view2);
         friend_listview.setAdapter(adapter);
@@ -37,7 +44,6 @@ public class FriendList extends AppCompatActivity {
 
     public void add_friend_msg(View v)
     {
-//        TODO: add the friend data into the sqlite dataset.
         EditText edittext = findViewById(R.id.editText2);
         String content = edittext.getText().toString();
         if(content.equals(""))
@@ -47,6 +53,10 @@ public class FriendList extends AppCompatActivity {
         adapter.notifyDataSetChanged();
         friend_listview.setSelection(friend_msgList.size());
         edittext.setText("");
+        ContentValues values = new ContentValues();
+        values.put("kind", "friend");
+        values.put("name", content);
+        dbadapter.db_add("names", values);
     }
     public class Friend_Msg
     {
