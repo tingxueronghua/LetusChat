@@ -36,6 +36,12 @@
             android:layout_height="wrap_content"
             android:onClick="send_chat_msg"
             android:text="send" />
+
+        <Button
+            android:id="@+id/sendfile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="select" />
     </LinearLayout>
 
 </LinearLayout>

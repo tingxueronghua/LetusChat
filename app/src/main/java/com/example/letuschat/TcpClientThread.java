@@ -2,10 +2,15 @@ package com.example.letuschat;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.icu.util.Output;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.ContactsContract;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -15,14 +20,24 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.view.LayoutInflater;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +52,9 @@ public class TcpClientThread extends Thread {
     private String msg;
     private Handler mHandler;
     private int msg_what;
+    private int SEND_FILE=0;
+    private String file_path;
+    private Uri file_uri;
 
     public TcpClientThread(Handler handler, String address, int port, int msg_what) {
         this.mHandler = handler;
@@ -44,20 +62,99 @@ public class TcpClientThread extends Thread {
         this.port = port;
         this.msg_what = msg_what;
     }
+    public void set_send_mode(int mode)
+    {
+        this.SEND_FILE = mode;
+    }
+    public void set_file_path(String file_name)
+    {
+        this.file_path = file_name;
+    }
+    public void set_file_uri(Uri uri)
+    {
+        this.file_uri = uri;
+    }
 
     @Override
     public void run() {
         super.run();
-        sendSocket();
+        if(this.SEND_FILE==1)
+        {
+            uploadFile();
+        }
+        else
+        {
+            sendSocket();
+        }
     }
     public void setmsg(String input_msg)
     {
         msg = input_msg;
     }
 
-    /**
-     * 设置
-     */
+    //send file
+    private void uploadFile()
+    {
+        String path = file_path;
+        InputStream reader = null;
+        BufferedReader bufferedReader = null;
+        Socket socket = null;
+        try{
+            socket = new Socket(address, port);
+            int bufferSize=8192;
+            byte[] buf = new byte[bufferSize];
+            File file  = new File(path);
+//            File file = new File(this.file_uri);
+            Log.i("tcpclientfile", "文件长度"+(int)file.length());
+            DataInputStream file_input = new DataInputStream(new FileInputStream(path));
+            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            //传输文件名
+            dataOutputStream.writeUTF(file.getName());
+            dataOutputStream.flush();
+            //将文件长度传输过去
+            dataOutputStream.writeLong((long)file.length());
+            dataOutputStream.flush();
+            //传输文件
+            int readSize=0;
+            while(true)
+            {
+                if (file_input!=null)
+                {
+                    readSize = file_input.read(buf);
+                }
+                if(readSize==-1)
+                {
+                    break;
+                }
+                dataOutputStream.write(buf, 0, readSize);
+                if(!dataInputStream.readUTF().equals("OK"))
+                {
+                    Log.i("tcpclientfile", "服务器"+address+"失去连接！");
+                    break;
+                }
+            }
+            dataOutputStream.flush();
+            file_input.close();
+            dataOutputStream.close();
+            socket.close();
+            dataInputStream.close();
+            Log.i("tcpclientfile", "文件传输完成");
+        }catch(UnknownHostException e){
+            e.printStackTrace();
+        }catch(IOException e){
+            e.printStackTrace();
+        }finally {
+            try{
+                if(bufferedReader!=null)
+                    bufferedReader.close();
+            }catch(IOException ex){
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    // send a text message
     private void sendSocket()
     {
         InputStreamReader reader = null;
