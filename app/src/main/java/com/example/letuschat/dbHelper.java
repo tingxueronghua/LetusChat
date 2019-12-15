@@ -18,8 +18,8 @@ public class dbHelper extends SQLiteOpenHelper {
     {
 //        db.execSQL(CREATE_TABLE_TEST);
         db.execSQL("CREATE TABLE IF NOT EXISTS names(_id integer primary key autoincrement, kind text, name text)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS single_chat(_id integer primary key autoincrement, name text, record text, date text)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS group_chat(_id integer primary key autoincrement, group_name text, name text, record text, data text)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS singlechat(_id integer primary key autoincrement, name text, record text, kind text, date text)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS groupchat(_id integer primary key autoincrement, group_name text, name text, record text, data text)");
     }
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {

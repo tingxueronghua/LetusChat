@@ -36,6 +36,8 @@ public class DatabaseAdapter {
         {
             id_number.add(c.getString(c.getColumnIndexOrThrow("name")));
         }
+        c.close();
+        db.close();
         return id_number;
     }
     public String db_find_id(String tablename, String id)
@@ -47,6 +49,8 @@ public class DatabaseAdapter {
         {
             str = c.getString(c.getColumnIndexOrThrow("name"));
         }
+        c.close();
+        db.close();
         return str;
     }
     public ArrayList<String> db_all_friend(String tablename)
@@ -61,5 +65,22 @@ public class DatabaseAdapter {
         c.close();
         db.close();
         return friends;
+    }
+    public ArrayList<DatabaseUtils> db_name_record(String tablename, String name)
+    {
+        ArrayList<DatabaseUtils> records = new ArrayList<>();
+        SQLiteDatabase db = dbhelper.getReadableDatabase();
+        Cursor c = db.query(tablename, null, null, null, null, null, null, null);
+        while(c.moveToNext())
+        {
+            DatabaseUtils tem = new DatabaseUtils();
+            tem.piece_kind = c.getString(c.getColumnIndexOrThrow("kind"));
+            tem.piece_name = c.getString(c.getColumnIndexOrThrow("name"));
+            tem.piece_record = c.getString(c.getColumnIndexOrThrow("record"));
+            records.add(tem);
+        }
+        c.close();
+        db.close();
+        return records;
     }
 }

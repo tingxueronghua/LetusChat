@@ -31,6 +31,9 @@ public class FriendList extends AppCompatActivity {
     public DatabaseAdapter dbadapter;
     public String address="166.111.140.57";
     public int port = 8000;
+    public String friend_address = "";
+    public String query;
+    public String tem_id;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,11 +56,13 @@ public class FriendList extends AppCompatActivity {
                     return;
                 }
                 int realPosition=(int)id+1;
-                String tem = dbadapter.db_find_id("names", String.valueOf(realPosition));
-                Toast.makeText(FriendList.this, tem, Toast.LENGTH_LONG).show();
-                Intent intent = new Intent(FriendList.this, MainActivity.class);
-                intent.putExtra("id", tem);
-                startActivity(intent);
+                tem_id = dbadapter.db_find_id("names", String.valueOf(realPosition));
+                Toast.makeText(FriendList.this, tem_id, Toast.LENGTH_LONG).show();
+
+                query = "q"+tem_id;
+                TcpClientThread client_thread = new TcpClientThread(mhandler, address, port, 1);
+                client_thread.setmsg(query);
+                client_thread.start();
             }
         });
     }
@@ -96,6 +101,26 @@ public class FriendList extends AppCompatActivity {
                     }
                     break;
                 }
+                case (1):{
+                    if(msg.obj.toString().equals("n"))
+                    {
+                        Toast.makeText(FriendList.this, "不在线", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    else
+                    {
+                        friend_address = msg.obj.toString();
+                        Intent intent = new Intent(FriendList.this, MainActivity.class);
+                        intent.putExtra("id", tem_id);
+                        intent.putExtra("address", friend_address);
+                        intent.putExtra("original_name", id_number);
+                        startActivity(intent);
+                    }
+                    break;
+                }
+                default:{
+                    break;
+                }
             }
         }
     };
@@ -108,7 +133,7 @@ public class FriendList extends AppCompatActivity {
             return;
         // check whether the friend is online
         String query = "q"+content;
-        TcpClientThread client_thread = new TcpClientThread(mhandler, address, port);
+        TcpClientThread client_thread = new TcpClientThread(mhandler, address, port, 0);
         client_thread.setmsg(query);
         client_thread.start();
     }

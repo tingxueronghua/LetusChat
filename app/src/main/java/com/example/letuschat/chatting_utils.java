@@ -23,4 +23,5 @@ public class chatting_utils {
         SharedPreferences read=context.getSharedPreferences(filename, context.MODE_PRIVATE);
         return read.getString(dataname, null);
     }
+
 }

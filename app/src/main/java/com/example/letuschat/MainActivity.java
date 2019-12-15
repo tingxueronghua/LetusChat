@@ -2,6 +2,7 @@ package com.example.letuschat;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -16,12 +17,17 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.view.LayoutInflater;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -30,56 +36,120 @@ public class MainActivity extends AppCompatActivity {
     public Button sendbtn;
     public MsgAdapter adapter;
     public List<Msg> msgList = new ArrayList<Msg>();
+    public String original_name;
     public String id_number;
+    private String address;
+    private int friend_port = 20101;
+    private DatabaseAdapter dbadapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getIntent();
         id_number = intent.getStringExtra("id");
+        address = intent.getStringExtra("address");
+        original_name = intent.getStringExtra("original_name");
         setContentView(R.layout.activity_main);
+        // database adapter
+        dbadapter = new DatabaseAdapter(MainActivity.this, original_name);
+        // list view settings
         msgList.add(new Msg("I miss you!", Msg.RECEIVED));
         msgList.add(new Msg("I miss you, too!", Msg.SENT));
+        ArrayList<DatabaseUtils> records = dbadapter.db_name_record("singlechat", id_number);
+        for(DatabaseUtils utils:records)
+        {
+            if(utils.piece_kind.equals("send"))
+                msgList.add(new Msg(utils.piece_record, Msg.SENT));
+            else
+                msgList.add(new Msg(utils.piece_record, Msg.RECEIVED));
+        }
+        //
         adapter = new MsgAdapter(MainActivity.this, R.layout.chat_alone, msgList);
         inputText = (EditText)findViewById(R.id.editText);
         msglistview = findViewById(R.id.list_view);
         sendbtn = findViewById(R.id.button);
         msglistview.setAdapter(adapter);
 
+        //server settings
+        TcpServer tcpServer = new TcpServer(20101);
+        tcpServer.start();
     }
 
+    // the server part
+    public class TcpServer extends Thread{
+        private int port;
+        public TcpServer(int port)
+        {
+            this.port = port;
+        }
+        @Override
+        public void run()
+        {
+            try{
+                ServerSocket serverSocket = new ServerSocket(this.port);
+                while(true){
+                    Socket socket = serverSocket.accept();
+                    TcpServerThread serverThread = new TcpServerThread(socket, mhandler);
+                    serverThread.start();
+                }
+            }catch(IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+    }
+    // get the present time
+    public static String getDateToString()
+    {
+        long time = System.currentTimeMillis();
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date date = new Date(time);
+        return simpleDateFormat.format(date);
+    }
 
+    // the client part
     public void send_chat_msg(View v){
         String content = inputText.getText().toString();
         if(content.equals(""))
             return;
         Msg msg = new Msg(content, Msg.SENT);
         msgList.add(msg);
-        adapter.notifyDataSetChanged();;
+        adapter.notifyDataSetChanged();
         msglistview.setSelection(msgList.size());
         inputText.setText("");
+        TcpClientThread tcpClientThread = new TcpClientThread(mhandler, address, friend_port, 0);
+        tcpClientThread.setmsg(content);
+        tcpClientThread.start();
+        ContentValues values = new ContentValues();
+        values.put("name", id_number);
+        values.put("record", content);
+        values.put("kind", "send");
+        values.put("date", getDateToString());
+        dbadapter.db_add("singlechat", values);
+//        ArrayList<DatabaseUtils> records = dbadapter.db_name_record("singlechat", id_number);
     }
 
 
-    // 0 for login, 1 for logout, 2 for check, 3 for chatting
     Handler mhandler = new Handler(){
         @Override
         public  void handleMessage(Message msg){
             super.handleMessage(msg);
             switch (msg.what){
                 case(0):{
-//                    Button btn = findViewById(R.id.button);
-//                    btn.setText(msg.obj.toString());
+                    Toast.makeText(MainActivity.this, msg.obj.toString(), Toast.LENGTH_LONG).show();
                     break;
                 }
                 case(1):{
-//                    Button btn=findViewById(R.id.button2);
-//                    btn.setText(msg.obj.toString());
-                    break;
-                }
-                case(2):{
-//                    Button btn = findViewById(R.id.button3);
-//                    btn.setText(msg.obj.toString());
+                    String tem = msg.obj.toString();
+                    msgList.add(new Msg(tem, Msg.RECEIVED));
+                    adapter.notifyDataSetChanged();
+                    msglistview.setSelection(msgList.size());
+                    ContentValues values = new ContentValues();
+                    values.put("name", id_number);
+                    values.put("record", tem);
+                    values.put("kind", "receive");
+                    values.put("data", getDateToString());
+                    dbadapter.db_add("singlechat", values);
                     break;
                 }
                 default:
@@ -88,47 +158,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-
-    public class TCPThread extends Thread{
-        public void run(int threadmode, String student_number){
-            Socket socket;
-            BufferedReader in;
-            PrintWriter out;
-            String str;
-            try{
-                Message msg = new Message();
-                msg.what = threadmode;
-                msg.obj = "connecting";
-                mhandler.sendMessage(msg);
-                socket = new Socket("183.173.99.71", 8000);
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                out = new PrintWriter(socket.getOutputStream());
-                if(threadmode == 0)
-                    out.write("2017011505_net2019");
-                else if(threadmode == 1)
-                    out.write("logout2017011505");
-                else if(threadmode == 2)
-                    out.write("q"+student_number);
-                else
-                    out.write("2017011505_net2019");
-                out.flush();
-                socket.shutdownOutput();
-
-                while(!((str = in.readLine()) == null)){
-                    Message msg2 = new Message();
-                    msg2.what = threadmode;
-                    msg2.obj = str;
-                    mhandler.sendMessage(msg2);
-                    break;
-                }
-                in.close();
-                out.close();
-                socket.close();
-            }catch(Exception e){
-                e.printStackTrace();
-            }
-        }
-    }
 
     public class Msg{
         public static  final int RECEIVED=0;

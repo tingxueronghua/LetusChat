@@ -36,11 +36,13 @@ public class TcpClientThread extends Thread {
     //发送内容
     private String msg;
     private Handler mHandler;
+    private int msg_what;
 
-    public TcpClientThread(Handler handler, String address, int port) {
+    public TcpClientThread(Handler handler, String address, int port, int msg_what) {
         this.mHandler = handler;
         this.address = address;
         this.port = port;
+        this.msg_what = msg_what;
     }
 
     @Override
@@ -75,7 +77,7 @@ public class TcpClientThread extends Thread {
             while((tem=bufferreader.readLine())!=null){
                 stringb.append(tem);
             }
-            sendMsg(0, stringb.toString());
+            sendMsg(msg_what, stringb.toString());
         }catch(UnknownHostException e){
             e.printStackTrace();
         }catch(IOException e){
