@@ -72,17 +72,28 @@ public class TcpServerThread extends Thread {
             //获得各个流
             DataInputStream dataInputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 //            path = getApplicationContext().getFilesDir().getAbsolutePath();
-            String fileDir = path+"/"+socket.getInetAddress().toString().substring(1, socket.getInetAddress().toString().length());
+//            String fileDir = path+"/"+socket.getInetAddress().toString().substring(1, socket.getInetAddress().toString().length());
+            String fileDir = path;
             File file = new File(fileDir);
             if (!file.exists())
             {
-                file.mkdirs();
+                try{
+                    boolean file_bool = file.mkdirs();
+                }catch (NullPointerException e)
+                {
+                    e.printStackTrace();
+                }
             }
+            boolean tem_bool = file.isDirectory();
+            boolean next_bool = file.getParentFile().exists();
             String filename = dataInputStream.readUTF();
             String filepath = fileDir+"/"+filename;
             file = new File(filepath);
             if(!file.exists())
             {
+                File tem_parent = file.getParentFile();
+                boolean tem_parent_directory = tem_parent.isDirectory();
+                boolean tem_ = tem_parent.mkdirs();
                 file.createNewFile();
             }
             DataOutputStream dataOutputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));

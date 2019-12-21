@@ -285,8 +285,10 @@ public class MainActivity extends AppCompatActivity {
                     Socket socket = serverSocket.accept();
                     TcpServerThread serverThread = new TcpServerThread(socket, mhandler);
                     serverThread.set_mode(mode);
-                    String tem_path = getApplicationContext().getFilesDir().getAbsolutePath();
-//                    serverThread.set_path("/storage/emulated/0/letuschat");
+//                    String tem_path = getApplicationContext().getFilesDir().getAbsolutePath();
+//                    String tem_path = "/storage/emulated/0/Pictures/知乎";
+//                    serverThread.set_path("/storage/emulated/0/letuschat")
+                    String tem_path = Environment.getExternalStorageDirectory().getAbsolutePath();
                     serverThread.set_path(tem_path);
                     serverThread.start();
                 }
