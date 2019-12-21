@@ -13,24 +13,21 @@
         android:theme="@style/AppTheme">
         <service
             android:name=".MyIntentService"
-            android:exported="false"></service>
+            android:exported="false">
+        </service>
 
         <activity android:name=".FriendList" />
         <activity android:name=".Main2Activity">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
+                <action android:name="android.intent.action.MAIN"/>
+                <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity">
-
-            <!-- <intent-filter> -->
-            <!-- <action android:name="android.intent.action.MAIN" /> -->
-
-
-            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
-            <!-- </intent-filter> -->
+<!--            <intent-filter>-->
+<!--                <action android:name="com.example.letuschat.action.msg"/>-->
+<!--            </intent-filter>-->
         </activity>
     </application>
 

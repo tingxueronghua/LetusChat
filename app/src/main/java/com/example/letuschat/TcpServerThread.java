@@ -2,7 +2,9 @@ package com.example.letuschat;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -30,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -38,13 +41,17 @@ import java.util.List;
 
 public class TcpServerThread extends Thread {
     private Socket socket;
-    private Handler mhandler;
+    //private Handler mhandler;
+    Context m_context;
     private int mode=0;
     private String path;
-    public TcpServerThread(Socket socket, Handler handler)
+    private String original_id;
+    public TcpServerThread(Socket socket, Context context, String original_id)
     {
         this.socket = socket;
-        this.mhandler = handler;
+        //this.mhandler = handler;
+        this.m_context = context;
+        this.original_id = original_id;
     }
     public void set_mode(int mode)
     {
@@ -54,17 +61,23 @@ public class TcpServerThread extends Thread {
     {
         this.path = tem;
     }
-    private void sendMsg(int what, Object object) {
-        Message msg = new Message();
-        msg.what = what;
-        msg.obj = object;
-        this.mhandler.sendMessage(msg);
+    private void sendMsg(int what, String object, String id_number) {
+        Intent intent = new Intent();
+        intent.setAction("com.example.letuschat.action.msg");
+        intent.putExtra("msg", object);
+        intent.putExtra("id_number", id_number);
+        m_context.sendBroadcast(intent);
+        MyIntentService.startActionMSG(this.m_context, original_id, object, id_number);
+//        Message msg = new Message();
+//        msg.what = what;
+//        msg.obj = object;
+//        this.mhandler.sendMessage(msg);
     }
     public void receive_file()
     {
         try
         {
-            Log.i("tcpserverfile", "客户端已连接");
+            Log.i("TcpServerThread", "客户端已连接");
             int buffersize = 8192;
             byte[] buf = new byte[buffersize];
             long donelen=0;//完成的文件的长度
@@ -72,34 +85,26 @@ public class TcpServerThread extends Thread {
             //获得各个流
             DataInputStream dataInputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 //            path = getApplicationContext().getFilesDir().getAbsolutePath();
-//            String fileDir = path+"/"+socket.getInetAddress().toString().substring(1, socket.getInetAddress().toString().length());
-            String fileDir = path;
+            String fileDir = path+"/"+socket.getInetAddress().toString().substring(1, socket.getInetAddress().toString().length());
             File file = new File(fileDir);
             if (!file.exists())
             {
-                try{
-                    boolean file_bool = file.mkdirs();
-                }catch (NullPointerException e)
-                {
-                    e.printStackTrace();
-                }
+                file.mkdirs();
             }
-            boolean tem_bool = file.isDirectory();
-            boolean next_bool = file.getParentFile().exists();
+            // read the friend's id_number
+            String id_number = dataInputStream.readUTF();
             String filename = dataInputStream.readUTF();
             String filepath = fileDir+"/"+filename;
-            file = new File(filepath);
+            //file = new File(filepath);
+            file = new File(path+"/"+filename);
             if(!file.exists())
             {
-                File tem_parent = file.getParentFile();
-                boolean tem_parent_directory = tem_parent.isDirectory();
-                boolean tem_ = tem_parent.mkdirs();
                 file.createNewFile();
             }
             DataOutputStream dataOutputStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
             filelen = dataInputStream.readLong();
-            Log.i("tcpserverfile", "文件长度为："+filelen+"\n");
-            Log.i("tcpserverfile", "开始接受文件\n");
+            Log.i("TcpServerThread", "文件长度为："+filelen+"\n");
+            Log.i("TcpServerThread", "开始接受文件\n");
             DataOutputStream ack = new DataOutputStream(socket.getOutputStream());
             while(true)
             {
@@ -117,10 +122,10 @@ public class TcpServerThread extends Thread {
                 dataOutputStream.write(buf, 0, read);
             }
             if(donelen==filelen)
-                Log.i("tcpserverfile", "接收完成，文件存为"+file+"\n");
+                Log.i("TcpServerThread", "接收完成，文件存为"+file+"\n");
             else
             {
-                Log.i("tcpserverfile", "失去连接");
+                Log.i("TcpServerThread", "失去连接");
                 file.delete();
             }
             ack.close();
@@ -131,7 +136,6 @@ public class TcpServerThread extends Thread {
         }catch(IOException e){
             e.printStackTrace();
         }
-
     }
     public void plain_msg()
     {
@@ -139,23 +143,49 @@ public class TcpServerThread extends Thread {
         BufferedReader bufReader = null;
         OutputStream os = null;
         try {
-            reader = new InputStreamReader(socket.getInputStream());
-            bufReader = new BufferedReader(reader);
-            String s = null;
-            StringBuffer sb = new StringBuffer();
-            while ((s = bufReader.readLine()) != null) {
-                sb.append(s);
-            }
-            System.out.println("服务器：" + sb.toString());
-            // 关闭输入流
-            socket.shutdownInput();
+            DataInputStream dataInputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+//            String id_number = dataInputStream.readUTF();
+//            String text_record = dataInputStream.readUTF();
 
-            // 返回给客户端数据
-            os = socket.getOutputStream();
-            sendMsg(1, sb.toString());
-            os.write(("我是服务端,客户端发给我的数据就是：" + sb.toString()).getBytes());
-            os.flush();
-            socket.shutdownOutput();
+            InputStream inputstream = socket.getInputStream();
+            reader = new InputStreamReader(inputstream);
+            BufferedReader bufferreader = new BufferedReader(reader);
+            String tem = null;
+            final StringBuffer text_record = new StringBuffer();
+            while((tem=bufferreader.readLine())!=null){
+                text_record.append(tem);
+            }
+            String tem_record = text_record.toString();
+            String id_name = tem_record.substring(0, 10);
+            String record = text_record.substring(10);
+
+
+
+            DataOutputStream ack = new DataOutputStream(socket.getOutputStream());
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(ack);
+            outputStreamWriter.write("OK，发送给我的数据是"+record);
+            outputStreamWriter.flush();
+            outputStreamWriter.close();
+            dataInputStream.close();
+            sendMsg(1, record, id_name);
+
+//            reader = new InputStreamReader(socket.getInputStream());
+//            bufReader = new BufferedReader(reader);
+//            String s = null;
+//            StringBuffer sb = new StringBuffer();
+//            while ((s = bufReader.readLine()) != null) {
+//                sb.append(s);
+//            }
+//            System.out.println("服务器：" + sb.toString());
+//            // 关闭输入流
+//            socket.shutdownInput();
+//
+//            // 返回给客户端数据
+//            os = socket.getOutputStream();
+//            sendMsg(1, sb.toString());
+//            os.write(("我是服务端,客户端发给我的数据就是：" + sb.toString()).getBytes());
+//            os.flush();
+//            socket.shutdownOutput();
         } catch (IOException e2) {
             e2.printStackTrace();
         } finally {// 关闭IO资源

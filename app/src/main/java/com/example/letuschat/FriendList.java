@@ -60,11 +60,16 @@ public class FriendList extends AppCompatActivity {
                 Toast.makeText(FriendList.this, tem_id, Toast.LENGTH_LONG).show();
 
                 query = "q"+tem_id;
-                TcpClientThread client_thread = new TcpClientThread(mhandler, address, port, 1);
+                TcpClientThread client_thread = new TcpClientThread(mhandler, address, port, 1, id_number);
+                client_thread.set_send_mode(2);
                 client_thread.setmsg(query);
                 client_thread.start();
             }
         });
+        // start the service
+        MyIntentService.startActionSTART(FriendList.this, id_number);
+//        Intent myintent = new Intent(this, MyIntentService.class);
+//        startService(myintent);
     }
 
     Handler mhandler = new Handler(){
@@ -133,7 +138,8 @@ public class FriendList extends AppCompatActivity {
             return;
         // check whether the friend is online
         String query = "q"+content;
-        TcpClientThread client_thread = new TcpClientThread(mhandler, address, port, 0);
+        TcpClientThread client_thread = new TcpClientThread(mhandler, address, port, 0, id_number);
+        client_thread.set_send_mode(2);
         client_thread.setmsg(query);
         client_thread.start();
     }

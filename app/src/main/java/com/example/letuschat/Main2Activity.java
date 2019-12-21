@@ -102,7 +102,8 @@ public class Main2Activity extends AppCompatActivity {
     public void login(View v){
         EditText text3 = findViewById(R.id.editText3);
         String query = text3.getText()+"_net2019";
-        TcpClientThread client_thread = new TcpClientThread(mhandler, address, port, 0);
+        TcpClientThread client_thread = new TcpClientThread(mhandler, address, port, 0, address);
+        client_thread.set_send_mode(2);
         client_thread.setmsg(query);
         client_thread.start();
     }

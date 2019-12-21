@@ -5,11 +5,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -55,7 +57,6 @@ public class MainActivity extends AppCompatActivity {
     private int friend_port = 20101;
     private DatabaseAdapter dbadapter;
     private String result_string="";
-    private Uri result_uri;
     private Button send_file;
 
     @Override
@@ -101,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
                 else if(tem_kind.equals("upload"))
                 {
                     send_file.setText("select");
-                    TcpClientThread tcpClientThread = new TcpClientThread(mhandler, address, friend_port+1, 0);
+                    TcpClientThread tcpClientThread = new TcpClientThread(mhandler, address, friend_port+1, 0, original_name);
                     tcpClientThread.set_send_mode(1);
                     tcpClientThread.set_file_path(result_string);
                     tcpClientThread.start();
@@ -112,16 +113,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
-        //server settings
-        TcpServer tcpServer = new TcpServer(20101);
-        tcpServer.start();
-        //file server settings
-        TcpServer tcpServer1 = new TcpServer(20102);
-        tcpServer1.set_mode(1);
-        tcpServer1.start();
+        // broadcast receiver for this id
+        MyReceiver receiver=new MyReceiver();
+        IntentFilter filter=new IntentFilter();
+        filter.addAction("com.example.letuschat.action.msg");
+        MainActivity.this.registerReceiver(receiver,filter);
     }
-    // result for the startactivityforresult
+    // result for the start activity for result
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data){
         if(resultCode!= Activity.RESULT_OK)
@@ -138,7 +136,6 @@ public class MainActivity extends AppCompatActivity {
             String real_path = getPath(MainActivity.this, uri);
             Log.i("VideoActivity", "----->"+real_path);
             result_string = real_path;
-            result_uri = uri;
         }
         super.onActivityResult(requestCode, resultCode, data);
         Toast.makeText(MainActivity.this, "结果为"+result_string, Toast.LENGTH_LONG).show();
@@ -160,8 +157,6 @@ public class MainActivity extends AppCompatActivity {
                 if ("primary".equalsIgnoreCase(type)) {
                     return Environment.getExternalStorageDirectory() + "/" + split[1];
                 }
-
-                // TODO handle non-primary volumes
             }
             // DownloadsProvider
             else if (isDownloadsDocument(uri)) {
@@ -268,40 +263,6 @@ public class MainActivity extends AppCompatActivity {
     }
 //-----------------------------------------------------------------
 
-    // the server part
-    public class TcpServer extends Thread{
-        private int port;
-        private int mode = 0;
-        public TcpServer(int port)
-        {
-            this.port = port;
-        }
-        @Override
-        public void run()
-        {
-            try{
-                ServerSocket serverSocket = new ServerSocket(this.port);
-                while(true){
-                    Socket socket = serverSocket.accept();
-                    TcpServerThread serverThread = new TcpServerThread(socket, mhandler);
-                    serverThread.set_mode(mode);
-//                    String tem_path = getApplicationContext().getFilesDir().getAbsolutePath();
-//                    String tem_path = "/storage/emulated/0/Pictures/知乎";
-//                    serverThread.set_path("/storage/emulated/0/letuschat")
-                    String tem_path = Environment.getExternalStorageDirectory().getAbsolutePath();
-                    serverThread.set_path(tem_path);
-                    serverThread.start();
-                }
-            }catch(IOException e)
-            {
-                e.printStackTrace();
-            }
-        }
-        public void set_mode(int mode)
-        {
-            this.mode = mode;
-        }
-    }
     // get the present time
     public static String getDateToString()
     {
@@ -321,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
         msglistview.setSelection(msgList.size());
         inputText.setText("");
-        TcpClientThread tcpClientThread = new TcpClientThread(mhandler, address, friend_port, 0);
+        TcpClientThread tcpClientThread = new TcpClientThread(mhandler, address, friend_port, 0, original_name);
         tcpClientThread.setmsg(content);
         tcpClientThread.start();
         ContentValues values = new ContentValues();
@@ -331,6 +292,22 @@ public class MainActivity extends AppCompatActivity {
         values.put("date", getDateToString());
         dbadapter.db_add("singlechat", values);
 //        ArrayList<DatabaseUtils> records = dbadapter.db_name_record("singlechat", id_number);
+    }
+
+    public class MyReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle bundle=intent.getExtras();
+            String receive_msg = bundle.getString("msg");
+            String receive_id_number = bundle.getString("id_number");
+            if(receive_id_number.equals(original_name))
+            {
+                Msg msg = new Msg(receive_msg, Msg.RECEIVED);
+                msgList.add(msg);
+                adapter.notifyDataSetChanged();
+                msglistview.setSelection(msgList.size());
+            }
+        }
     }
 
 

@@ -55,12 +55,14 @@ public class TcpClientThread extends Thread {
     private int SEND_FILE=0;
     private String file_path;
     private Uri file_uri;
+    private String original_name;
 
-    public TcpClientThread(Handler handler, String address, int port, int msg_what) {
+    public TcpClientThread(Handler handler, String address, int port, int msg_what, String original_name) {
         this.mHandler = handler;
         this.address = address;
         this.port = port;
         this.msg_what = msg_what;
+        this.original_name = original_name;
     }
     public void set_send_mode(int mode)
     {
@@ -109,6 +111,9 @@ public class TcpClientThread extends Thread {
             DataInputStream file_input = new DataInputStream(new FileInputStream(path));
             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
             DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            // 传输id
+            dataOutputStream.writeUTF(original_name);
+            dataOutputStream.flush();
             //传输文件名
             dataOutputStream.writeUTF(file.getName());
             dataOutputStream.flush();
@@ -163,9 +168,25 @@ public class TcpClientThread extends Thread {
         try{
             socket = new Socket(address, port);
             OutputStream outputstream = socket.getOutputStream();
-            outputstream.write(msg.getBytes());
-            outputstream.flush();
+            DataOutputStream dataOutputStream = new DataOutputStream(outputstream);
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(dataOutputStream);
+            String tem_msg = "";
+            if(SEND_FILE==0)
+            {
+                tem_msg = original_name;
+            }
+            tem_msg = tem_msg+msg;
+//            outputstream.write(msg.getBytes());
+//            outputstream.flush();
+            //dataOutputStream.writeUTF(msg);
+            //dataOutputStream.flush();
+            outputStreamWriter.write(tem_msg);
+            outputStreamWriter.flush();
+            //DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            //InputStreamReader inputStreamReader = new InputStreamReader(dataInputStream);
+            //dataOutputStream.close();
             socket.shutdownOutput();
+
             InputStream inputstream = socket.getInputStream();
             reader = new InputStreamReader(inputstream);
             bufferreader = new BufferedReader(reader);
@@ -175,6 +196,10 @@ public class TcpClientThread extends Thread {
                 stringb.append(tem);
             }
             sendMsg(msg_what, stringb.toString());
+            dataOutputStream.flush();
+            dataOutputStream.close();
+            socket.close();
+            inputstream.close();
         }catch(UnknownHostException e){
             e.printStackTrace();
         }catch(IOException e){
