@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -68,8 +69,6 @@ public class FriendList extends AppCompatActivity {
         });
         // start the service
         MyIntentService.startActionSTART(FriendList.this, id_number);
-//        Intent myintent = new Intent(this, MyIntentService.class);
-//        startService(myintent);
     }
 
     Handler mhandler = new Handler(){
@@ -191,5 +190,20 @@ public class FriendList extends AppCompatActivity {
             TextView leftMsg;
             TextView rightMsg;
         }
+    }
+    public void logout(){
+        String query = "logout"+id_number;
+        TcpClientThread client_thread = new TcpClientThread(mhandler, address, port, 0, address);
+        client_thread.set_send_mode(2);
+        client_thread.setmsg(query);
+        client_thread.start();
+    }
+    //stop the service to avoid the data of different people mixed together.
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Intent intent = new Intent(FriendList.this, MyIntentService.class);
+        FriendList.this.stopService(intent);
+        logout();
     }
 }

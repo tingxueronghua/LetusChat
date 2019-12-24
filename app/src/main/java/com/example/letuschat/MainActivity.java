@@ -86,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
         msglistview = findViewById(R.id.list_view);
         sendbtn = findViewById(R.id.button);
         msglistview.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+        msglistview.setSelection(msgList.size());
         // upload file settings
         send_file = findViewById(R.id.sendfile);
         send_file.setOnClickListener(new View.OnClickListener() {
@@ -291,7 +293,6 @@ public class MainActivity extends AppCompatActivity {
         values.put("kind", "send");
         values.put("date", getDateToString());
         dbadapter.db_add("singlechat", values);
-//        ArrayList<DatabaseUtils> records = dbadapter.db_name_record("singlechat", id_number);
     }
 
     public class MyReceiver extends BroadcastReceiver {

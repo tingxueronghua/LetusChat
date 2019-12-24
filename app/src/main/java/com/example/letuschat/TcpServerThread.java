@@ -68,10 +68,6 @@ public class TcpServerThread extends Thread {
         intent.putExtra("id_number", id_number);
         m_context.sendBroadcast(intent);
         MyIntentService.startActionMSG(this.m_context, original_id, object, id_number);
-//        Message msg = new Message();
-//        msg.what = what;
-//        msg.obj = object;
-//        this.mhandler.sendMessage(msg);
     }
     public void receive_file()
     {

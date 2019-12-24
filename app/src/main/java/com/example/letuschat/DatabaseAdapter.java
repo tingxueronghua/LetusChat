@@ -70,7 +70,7 @@ public class DatabaseAdapter {
     {
         ArrayList<DatabaseUtils> records = new ArrayList<>();
         SQLiteDatabase db = dbhelper.getReadableDatabase();
-        Cursor c = db.query(tablename, null, null, null, null, null, null, null);
+        Cursor c = db.query(tablename, null, "name=?", new String[]{name}, null, null, null, null);
         while(c.moveToNext())
         {
             DatabaseUtils tem = new DatabaseUtils();
