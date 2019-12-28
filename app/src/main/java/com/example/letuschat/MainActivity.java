@@ -301,7 +301,7 @@ public class MainActivity extends AppCompatActivity {
             Bundle bundle=intent.getExtras();
             String receive_msg = bundle.getString("msg");
             String receive_id_number = bundle.getString("id_number");
-            if(receive_id_number.equals(original_name))
+            if(receive_id_number.equals(id_number))
             {
                 Msg msg = new Msg(receive_msg, Msg.RECEIVED);
                 msgList.add(msg);
