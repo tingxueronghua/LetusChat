@@ -193,11 +193,13 @@ public class FriendList extends AppCompatActivity {
     }
     public void logout(){
         String query = "logout"+id_number;
-        TcpClientThread client_thread = new TcpClientThread(mhandler, address, port, 0, address);
+        TcpClientThread client_thread = new TcpClientThread(mhandler, address, port, 5, address);
         client_thread.set_send_mode(2);
         client_thread.setmsg(query);
         client_thread.start();
     }
+
+
     //stop the service to avoid the data of different people mixed together.
     @Override
     public void onDestroy() {
